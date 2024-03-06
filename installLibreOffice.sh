@@ -148,8 +148,13 @@ installSoftwares
 
   # Verificar atualização
   verifyUpdate() {
-  	if [[ '${NEW_VERSION}' > '${CURRENT_VERSION}' ]]
+  	if [[ ${CURRENT_VERSION} < ${NEW_VERSION} ]] || [[ ${CURRENT_VERSION} == ${NEW_VERSION} ]]
   	then
+  		echo "Libreoffice atualizado."
+  		echo -e "\e[32m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
+  		echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
+  		exit
+  	else
   		echo "Libreoffice desatualizado."
   		echo -e "\e[31m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
   		echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
@@ -163,11 +168,6 @@ installSoftwares
   		else
   			echo -e "\e[31m[*]\e[0m Abortando ..."
   		fi
-  	else
-  		echo "Libreoffice atualizado."
-  		echo -e "\e[32m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
-  		echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
-  		exit
 
   	fi
   }
