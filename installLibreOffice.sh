@@ -5,8 +5,13 @@
 # Autor: Hugo Souza
 #
 clear
+if [[ `id -u` != "0" ]]
+then
+	echo "Você precisa de privilégios de root para continuar."
+	exit
+else
 echo "Bem vindo ao instalador do Libreoffice, aguarde enquanto detectamos se sua versão está atualizada..."
-SOFTWARES="curl mkdir wget tar dpkg cut id"
+SOFTWARES="curl mkdir wget tar dpkg cut"
 installSoftwares () {
     for software in ${SOFTWARES}
     do
@@ -39,12 +44,7 @@ installSoftwares () {
 }
 
 installSoftwares
-if [[ `${ID} -u` != "0" ]]
-then
-	echo "Você precisa de privilégios de root para continuar."
-	exit
-else
-  # Lista de mirror para download.
+ # Lista de mirror para download.
  # MIRROR_LIST="http://mirror.pop-sc.rnp.br/mirror/tdf/libreoffice/stable \
  # https://tdf.c3sl.ufpr.br/libreoffice/stable \
  # https://mirror.ufca.edu.br/mirror/tdf/libreoffice/stable" \
