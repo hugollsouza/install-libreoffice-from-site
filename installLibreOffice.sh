@@ -56,7 +56,7 @@ installSoftwares
   # Em caso de atualização para versão 6.4, alterar a variável abaixo
   # Current Version instaled.
   SOFFICE=`find /opt /usr /sbin /bin -type f -iname soffice`
-  CURRENT_VERSION=`${SOFFICE} --version | ${CUT} -d " " -f 2`
+  CURRENT_VERSION=`${SOFFICE} --version | ${CUT} -d " " -f 2 | ${CUT} -d "." -f -3`
 
   # New version
   NEW_VERSION=`${CURL} -s  https://www.libreoffice.org/download/download-libreoffice/ | grep -Ei "dl_version_number" | head -1 | sed 's@</span.*$@@' | sed 's@^.*number">@@'`
