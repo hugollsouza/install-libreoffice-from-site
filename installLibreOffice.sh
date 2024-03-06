@@ -9,7 +9,8 @@ if [[ `id -u` != "0" ]]
 then
 	echo "Você precisa de privilégios de root para continuar."
 	exit
-else
+fi
+
 echo "Bem vindo ao instalador do Libreoffice, aguarde enquanto detectamos se sua versão está atualizada..."
 SOFTWARES="curl mkdir wget tar dpkg cut"
 installSoftwares () {
@@ -42,134 +43,154 @@ installSoftwares () {
 		fi
 	fi
 }
-
 installSoftwares
- # Lista de mirror para download.
- # MIRROR_LIST="http://mirror.pop-sc.rnp.br/mirror/tdf/libreoffice/stable \
- # https://tdf.c3sl.ufpr.br/libreoffice/stable \
- # https://mirror.ufca.edu.br/mirror/tdf/libreoffice/stable" \
- # https://download.documentfoundation.org/libreoffice/stable"
 
-  MIRROR_LIST="https://download.documentfoundation.org/libreoffice/stable"
+# Lista de mirror para download.
+# MIRROR_LIST="http://mirror.pop-sc.rnp.br/mirror/tdf/libreoffice/stable \
+# https://tdf.c3sl.ufpr.br/libreoffice/stable \
+# https://mirror.ufca.edu.br/mirror/tdf/libreoffice/stable" \
+# https://download.documentfoundation.org/libreoffice/stable"
 
-  # Versão atual instalada
-  # Em caso de atualização para versão 6.4, alterar a variável abaixo
-  # Current Version instaled.
-  SOFFICE=`find /opt /usr /sbin /bin -type f -iname soffice`
-  CURRENT_VERSION=`${SOFFICE} --version | ${CUT} -d " " -f 2 | ${CUT} -d "." -f -3`
+MIRROR_LIST="https://download.documentfoundation.org/libreoffice/stable"
 
-  # New version
-  NEW_VERSION=`${CURL} -s  https://www.libreoffice.org/download/download-libreoffice/ | grep -Ei "dl_version_number" | head -1 | sed 's@</span.*$@@' | sed 's@^.*number">@@'`
-
-  # PACKAGE
-  PACKAGE="deb"
-
-  # Arquitetura
-  ARCH="x86-64"
-
-
-  # Função para fazer o download dos arquivos
-  filesDownload() {
-  	# Arquivo principal
-  	${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}.tar.gz
-
-  	# Arquivo de tradução pt-BR
-  	${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_langpack_pt-BR.tar.gz
-
-  	# Arquivo de ajuda pt-BR
-  	${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_helppack_pt-BR.tar.gz
-  }
+# Versão atual instalada
+# Current Version instaled.
+verifyCurrentVersion() {
+	soffice --version 2> /dev/null
+	if [[ $? != '0' ]]
+	then
+		echo -e "\e[31m[*]\e[0m Não foi encontrada nenhuma versão no sistema, deseja instalar a versão: ${NEW_VERSION}? [S/N]"
+		read RESP
+	    if [[ "${RESP}" == "S" ]] || [[ "${RESP}" == "s" ]]
+		then
+			update
+			exit
+		else
+			echo -e "\e[31m[*]\e[0m Abortando ..."
+		fi
+	else
+		CURRENT_VERSION=`soffice --version | ${CUT} -d " " -f 2 | ${CUT} -d "." -f -3`
+	fi
+}
 
 
-  # Função para extrair os arquivos
-  filesExtract() {
-  	${MKDIR} main
-  	cd main
-  	tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}.tar.gz --strip-components=1
-  	cd ..
-  	${MKDIR} langpack
-  	cd langpack
-  	tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_langpack_pt-BR.tar.gz --strip-components=1
-  	cd ..
-  	${MKDIR} helppack
-  	cd helppack
-  	tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_helppack_pt-BR.tar.gz --strip-components=1
-  	cd ..
-  }
+# New version
+NEW_VERSION=`${CURL} -s  https://www.libreoffice.org/download/download-libreoffice/ | grep -Ei "dl_version_number" | head -1 | sed 's@</span.*$@@' | sed 's@^.*number">@@'`
+
+# PACKAGE
+PACKAGE="deb"
+
+# Arquitetura
+ARCH="x86-64"
 
 
-  # Função para instalar os arquivos .deb
-  filesInstall() {
-  	${DPKG} -i `pwd`/main/DEBS/*.deb
-  	${DPKG} -i `pwd`/langpack/DEBS/*.deb
-  	${DPKG} -i `pwd`/helppack/DEBS/*.deb
+# Função para fazer o download dos arquivos
+filesDownload() {
+# Arquivo principal
+${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}.tar.gz
 
-  	# # Associa a variavel SOFFICE a nova localizaco do binario atualizado.
-  	# SOFFICE=`find /opt /usr /sbin /bin -type f -iname soffice`
+# Arquivo de tradução pt-BR
+${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_langpack_pt-BR.tar.gz
 
-  	# Cria um link simbólico do novo binario soffice
-  	ln -fs ${SOFFICE} /usr/local/bin/soffice
-  	source /etc/profile
-  }
+# Arquivo de ajuda pt-BR
+${WGET} -c ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_helppack_pt-BR.tar.gz
+}
 
-  update() {
-  	for MIRROR in $MIRROR_LIST
-  	do
-  	echo -e "\e[32m===>\e[0m Testando mirror ${MIRROR}"
-  	${CURL} --silent --head --fail ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/ &> /dev/null
-  	if [ $? = 0 ]
-  	then
-  		echo -e "\e[32m====>\e[0m O mirror $MIRROR está on-line e o dowload será feito por ele."
-  		if [ -d /tmp/libreoffice_$NEW_VERSION ]
-  		then
-  			cd /tmp
-  			echo "Diretório ja existe, removendo arquivos antigos."
-  			rm -rf /tmp/libreoffice*
-  			cd libreoffice_${NEW_VERSION}
-  			filesDownload
-  			filesExtract
-  			filesInstall
-  			exit
-  		else
-  			cd /tmp
-  			echo -e "\e[32m=====>\e[0m Criando o diretório temporário para salvar os arquivos"
-  			${MKDIR} libreoffice_${NEW_VERSION}
-  			cd libreoffice_${NEW_VERSION}
-  			filesDownload
-  			filesExtract
-  			filesInstall
-  			exit
-  		fi
-  	else
-  		echo -e "\e[31m===>\e[0m O mirror $MIRROR está offline, testando o próximo"
-  	fi
-  done
-  }
 
-  # Verificar atualização
-  verifyUpdate() {
-  	if [[ ${CURRENT_VERSION} < ${NEW_VERSION} ]] || [[ ${CURRENT_VERSION} == ${NEW_VERSION} ]]
-  	then
-  		echo "Libreoffice atualizado."
-  		echo -e "\e[32m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
-  		echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
-  		exit
-  	else
-  		echo "Libreoffice desatualizado."
-  		echo -e "\e[31m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
-  		echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
-  		echo -ne "\e[33m[*]\e[0m Versão instalada não está atualizada, deseja continuar? [S/n] "
-  		read RESP
-  		if [[ "${RESP}" == "S" ]] || [[ "${RESP}" == "s" ]]
-  		then
-  			apt update
-  			apt remove -y --purge libreoffice*
-  			update
-  		else
-  			echo -e "\e[31m[*]\e[0m Abortando ..."
-  		fi
+# Função para extrair os arquivos
+filesExtract() {
+${MKDIR} main
+cd main
+tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}.tar.gz --strip-components=1
+cd ..
+${MKDIR} langpack
+cd langpack
+tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_langpack_pt-BR.tar.gz --strip-components=1
+cd ..
+${MKDIR} helppack
+cd helppack
+tar -xvf ../LibreOffice_${NEW_VERSION}_Linux_${ARCH}_${PACKAGE}_helppack_pt-BR.tar.gz --strip-components=1
+cd ..
+}
 
-  	fi
-  }
-    verifyUpdate
-  fi
+
+# Função para instalar os arquivos .deb
+filesInstall() {
+${DPKG} -i `pwd`/main/DEBS/*.deb
+${DPKG} -i `pwd`/langpack/DEBS/*.deb
+${DPKG} -i `pwd`/helppack/DEBS/*.deb
+
+# # Associa a variavel SOFFICE a nova localizaco do binario atualizado.
+SOFFICE=`find /opt /usr /sbin /bin -type f -iname soffice`
+
+# Cria um link simbólico do novo binario soffice
+ln -fs ${SOFFICE} /usr/local/bin/soffice
+source /etc/profile
+}
+
+update() {
+for MIRROR in $MIRROR_LIST
+do
+echo -e "\e[32m===>\e[0m Testando mirror ${MIRROR}"
+${CURL} --silent --head --fail ${MIRROR}/${NEW_VERSION}/${PACKAGE}/${ARCH//-/_}/ &> /dev/null
+if [ $? = 0 ]
+then
+	echo -e "\e[32m====>\e[0m O mirror $MIRROR está on-line e o dowload será feito por ele."
+	if [ -d /tmp/libreoffice_$NEW_VERSION ]
+	then
+		cd /tmp
+		echo "Diretório ja existe, removendo arquivos antigos."
+		rm -rf /tmp/libreoffice*
+		cd libreoffice_${NEW_VERSION}
+		filesDownload
+		filesExtract
+		filesInstall
+		exit
+	else
+		cd /tmp
+		echo -e "\e[32m=====>\e[0m Criando o diretório temporário para salvar os arquivos"
+		${MKDIR} libreoffice_${NEW_VERSION}
+		cd libreoffice_${NEW_VERSION}
+		filesDownload
+		filesExtract
+		filesInstall
+		exit
+	fi
+else
+	echo -e "\e[31m===>\e[0m O mirror $MIRROR está offline, testando o próximo"
+fi
+done
+}
+
+# Verificar atualização
+verifyUpdate() {
+if [[ ${CURRENT_VERSION} < ${NEW_VERSION} ]] || [[ ${CURRENT_VERSION} == ${NEW_VERSION} ]]
+then
+	echo "Libreoffice atualizado."
+	echo -e "\e[32m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
+	echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
+	exit
+else
+	echo "Libreoffice desatualizado."
+	echo -e "\e[31m[*]\e[0m Versão instalada: ${CURRENT_VERSION}"
+	echo -e "\e[32m[*]\e[0m Versão no site: ${NEW_VERSION}"
+	echo -ne "\e[33m[*]\e[0m Versão instalada não está atualizada, deseja continuar? [S/n] "
+	read RESP
+	if [[ "${RESP}" == "S" ]] || [[ "${RESP}" == "s" ]]
+	then
+		apt update
+		apt remove -y --purge libreoffice*
+		update
+	else
+		echo -e "\e[31m[*]\e[0m Abortando ..."
+	fi
+
+fi
+
+}
+main (){
+	verifyCurrentVersion
+	verifyUpdate
+}
+
+main
