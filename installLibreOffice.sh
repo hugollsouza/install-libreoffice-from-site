@@ -56,7 +56,7 @@ MIRROR_LIST="https://download.documentfoundation.org/libreoffice/stable"
 # Versão atual instalada
 # Current Version instaled.
 verifyCurrentVersion() {
-	soffice --version 2> /dev/null
+	soffice --version 2> /dev/null 1>2
 	if [[ $? != '0' ]]
 	then
 		echo -e "\e[31m[*]\e[0m Não foi encontrada nenhuma versão no sistema, deseja instalar a versão: ${NEW_VERSION}? [S/N]"
